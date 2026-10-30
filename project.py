@@ -1,5 +1,6 @@
 
 import streamlit as st
+import random 
 
 # ==========================================
 # PAGE SETTINGS
@@ -1107,5 +1108,266 @@ else:
             st.session_state.quiz_percentage = None
 
             st.rerun()
+
+# ==========================================
+# GUESS THE NUMBER GAME
+# ==========================================
+
+st.markdown("---")
+st.title("🎯 Guess the Number")
+
+st.write(
+    "Choose a difficulty, decide how many guesses "
+    "you want, and try to find the secret number!"
+)
+
+# GAME SESSION STATE
+
+if "number_game_difficulty" not in st.session_state:
+    st.session_state.number_game_difficulty = "Normal"
+
+if "number_game_active" not in st.session_state:
+    st.session_state.number_game_active = False
+
+if "number_game_secret" not in st.session_state:
+    st.session_state.number_game_secret = None
+
+if "number_game_max_guesses" not in st.session_state:
+    st.session_state.number_game_max_guesses = 5
+
+if "number_game_guesses_used" not in st.session_state:
+    st.session_state.number_game_guesses_used = 0
+
+if "number_game_won" not in st.session_state:
+    st.session_state.number_game_won = None
+
+if "number_game_message" not in st.session_state:
+    st.session_state.number_game_message = ""
+
+
+# DIFFICULTY SETTINGS
+
+difficulty_settings = {
+    "Normal": {
+        "minimum": 1,
+        "maximum": 50,
+        "icon": "🟢"
+    },
+    "Intermediate": {
+        "minimum": 1,
+        "maximum": 150,
+        "icon": "🔵"
+    },
+    "Advanced": {
+        "minimum": 0,
+        "maximum": 700,
+        "icon": "🟠"
+    },
+    "Insane": {
+        "minimum": 0,
+        "maximum": 1157,
+        "icon": "🔴"
+    }
+}
+
+
+# DIFFICULTY BUTTONS
+
+st.subheader("Choose your difficulty")
+
+diff_cols = st.columns(4)
+
+difficulty_names = [
+    "Normal",
+    "Intermediate",
+    "Advanced",
+    "Insane"
+]
+
+for column, difficulty in zip(
+    diff_cols,
+    difficulty_names
+):
+
+    settings = difficulty_settings[difficulty]
+
+    with column:
+
+        if st.button(
+            f"{settings['icon']} {difficulty}",
+            key=f"number_game_difficulty_{difficulty}",
+            use_container_width=True,
+            disabled=st.session_state.number_game_active
+        ):
+
+            st.session_state.number_game_difficulty = difficulty
+            st.session_state.number_game_won = None
+            st.session_state.number_game_message = ""
+
+            st.rerun()
+
+
+# SELECTED DIFFICULTY
+
+selected_difficulty = (
+    st.session_state.number_game_difficulty
+)
+
+selected_settings = difficulty_settings[
+    selected_difficulty
+]
+
+st.info(
+    f"Selected: {selected_settings['icon']} "
+    f"**{selected_difficulty}** — "
+    f"Guess a number from "
+    f"**{selected_settings['minimum']}** "
+    f"to **{selected_settings['maximum']}**."
+)
+
+
+# NUMBER OF GUESSES
+
+max_guesses = st.number_input(
+    "❤️ Number of guesses",
+    min_value=1,
+    max_value=100,
+    value=5,
+    step=1,
+    key="number_game_guess_limit",
+    disabled=st.session_state.number_game_active
+)
+
+
+# START GAME
+
+if st.button(
+    "🚀 Start Game"
+    if not st.session_state.number_game_active
+    else "🔄 Restart Game",
+    use_container_width=True
+):
+
+    st.session_state.number_game_secret = random.randint(
+        selected_settings["minimum"],
+        selected_settings["maximum"]
+    )
+
+    st.session_state.number_game_max_guesses = int(
+        max_guesses
+    )
+
+    st.session_state.number_game_guesses_used = 0
+    st.session_state.number_game_active = True
+    st.session_state.number_game_won = None
+    st.session_state.number_game_message = ""
+
+    if "number_game_guess" in st.session_state:
+        del st.session_state["number_game_guess"]
+
+    st.rerun()
+
+
+# GAMEPLAY
+
+if st.session_state.number_game_active:
+
+    st.markdown("---")
+
+    guesses_left = (
+        st.session_state.number_game_max_guesses
+        - st.session_state.number_game_guesses_used
+    )
+
+    st.write(f"**Guesses remaining:** {guesses_left}")
+
+    guess = st.number_input(
+        f"Enter your guess "
+        f"({selected_settings['minimum']}–"
+        f"{selected_settings['maximum']})",
+        min_value=selected_settings["minimum"],
+        max_value=selected_settings["maximum"],
+        step=1,
+        key="number_game_guess"
+    )
+
+    if st.button(
+        "🎯 Submit Guess",
+        use_container_width=True
+    ):
+
+        st.session_state.number_game_guesses_used += 1
+
+        secret = st.session_state.number_game_secret
+
+        if int(guess) == secret:
+
+            st.session_state.number_game_active = False
+            st.session_state.number_game_won = True
+
+            st.session_state.number_game_message = (
+                "You found the secret number!"
+            )
+
+        elif (
+            st.session_state.number_game_guesses_used
+            >= st.session_state.number_game_max_guesses
+        ):
+
+            st.session_state.number_game_active = False
+            st.session_state.number_game_won = False
+
+            st.session_state.number_game_message = (
+                "try harder next time little boy"
+            )
+
+        elif int(guess) < secret:
+
+            st.session_state.number_game_message = (
+                "📈 Too low! Try a higher number."
+            )
+
+        else:
+
+            st.session_state.number_game_message = (
+                "📉 Too high! Try a lower number."
+            )
+
+        st.rerun()
+
+    if st.session_state.number_game_message:
+        st.write(st.session_state.number_game_message)
+
+
+# WINNING RESULTS
+
+if st.session_state.number_game_won is True:
+
+    st.markdown("---")
+
+    st.success(
+        f"🎉 Congratulations! The secret number was "
+        f"**{st.session_state.number_game_secret}**. "
+        f"You guessed it in "
+        f"**{st.session_state.number_game_guesses_used}** "
+        f"guess(es)! Amazing work! Keep challenging yourself!"
+    )
+
+    st.balloons()
+
+
+# LOSING RESULTS
+
+elif st.session_state.number_game_won is False:
+
+    st.markdown("---")
+
+    st.error(
+        f"The secret number was "
+        f"**{st.session_state.number_game_secret}**. "
+        f"You used "
+        f"**{st.session_state.number_game_guesses_used}** "
+        f"guess(es). try harder next time little boy :>"
+    )
 
 
