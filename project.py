@@ -5,6 +5,61 @@ import pandas as pd
 from datetime import date
 
 
+st.markdown("""
+<style>
+
+/* Main grey background */
+.stApp {
+    background: #383838;
+}
+
+/* Animated diagonal white lines */
+.stApp::before {
+    content: "";
+    position: fixed;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+
+    background-image: repeating-linear-gradient(
+        135deg,
+        transparent 0px,
+        transparent 75px,
+        rgba(255, 255, 255, 0.12) 76px,
+        rgba(255, 255, 255, 0.12) 78px,
+        transparent 79px,
+        transparent 150px
+    );
+
+    animation: movingLines 25s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Keep app content above the background */
+.stApp > header,
+.stApp .main,
+.stApp section {
+    position: relative;
+    z-index: 1;
+}
+
+/* Diagonal movement */
+@keyframes movingLines {
+    from {
+        transform: translate(0, 0);
+    }
+    to {
+        transform: translate(150px, 150px);
+    }
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+
 # ==========================================
 # PAGE SETTINGS
 # ==========================================
