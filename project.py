@@ -1371,6 +1371,7 @@ elif st.session_state.number_game_won is False:
     )
 
 
+
 # ==========================================
 # MY TO-DO LIST
 # ==========================================
@@ -1379,7 +1380,8 @@ st.markdown("---")
 
 st.title("✅ My To-Do List")
 
-st.write("Stay organized and keep track of your tasks!")
+st.write("Plan your day and track your progress.")
+
 
 # SESSION STATE
 
@@ -1388,6 +1390,9 @@ if "todo_tasks" not in st.session_state:
 
 if "todo_next_id" not in st.session_state:
     st.session_state.todo_next_id = 0
+
+if "todo_error" not in st.session_state:
+    st.session_state.todo_error = False
 
 
 # ADD TASK FUNCTION
@@ -1404,29 +1409,49 @@ def add_todo_task():
         })
 
         st.session_state.todo_next_id += 1
-
         st.session_state.todo_input = ""
+        st.session_state.todo_error = False
 
     else:
         st.session_state.todo_error = True
 
 
+# DELETE TASK FUNCTION
+
+def delete_todo_task(task_id):
+
+    st.session_state.todo_tasks = [
+        task for task in st.session_state.todo_tasks
+        if task["id"] != task_id
+    ]
+
+    checkbox_key = f"todo_done_{task_id}"
+
+    if checkbox_key in st.session_state:
+        del st.session_state[checkbox_key]
+
+
 # TASK INPUT
 
-st.text_input(
-    "Enter your task:",
-    placeholder="What do you need to do?",
-    key="todo_input"
-)
+with st.container(border=True):
 
-st.button(
-    "➕ Add Task",
-    on_click=add_todo_task,
-    use_container_width=True
-)
+    st.text_input(
+        "What do you need to do?",
+        placeholder="What do you need to do?",
+        key="todo_input"
+    )
+
+    st.button(
+        "➕ Add Task",
+        on_click=add_todo_task,
+        use_container_width=False
+    )
+
+if st.session_state.todo_error:
+    st.warning("Please enter a task first!")
 
 
-# DISPLAY TASKS
+# TASK LIST
 
 st.markdown("---")
 
@@ -1434,16 +1459,57 @@ st.subheader("📋 My Tasks")
 
 if st.session_state.todo_tasks:
 
+    completed_tasks = 0
+
     for task in st.session_state.todo_tasks:
 
-        st.checkbox(
-            task["task"],
-            key=f"todo_done_{task['id']}"
-        )
+        task_id = task["id"]
+
+        col1, col2 = st.columns([8, 1])
+
+        with col1:
+
+            is_completed = st.checkbox(
+                task["task"],
+                key=f"todo_done_{task_id}"
+            )
+
+            if is_completed:
+                completed_tasks += 1
+
+        with col2:
+
+            st.button(
+                "🗑️",
+                key=f"delete_todo_{task_id}",
+                help="Delete this task",
+                on_click=delete_todo_task,
+                args=(task_id,)
+            )
+
+    # PROGRESS BAR
+
+    total_tasks = len(st.session_state.todo_tasks)
+
+    progress = completed_tasks / total_tasks
+
+    st.markdown("---")
+
+    st.progress(progress)
+
+    st.write(
+        f"Completed {completed_tasks} "
+        f"out of {total_tasks} tasks!"
+    )
+
+    percentage = int(progress * 100)
+
+    st.caption(f"{percentage}% completed")
 
 else:
 
     st.info("No tasks yet. Add your first task!")
+
 
 
 
