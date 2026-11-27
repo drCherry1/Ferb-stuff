@@ -1372,6 +1372,7 @@ elif st.session_state.number_game_won is False:
 
 
 
+
 # ==========================================
 # MY TO-DO LIST
 # ==========================================
@@ -1395,27 +1396,6 @@ if "todo_error" not in st.session_state:
     st.session_state.todo_error = False
 
 
-# ADD TASK FUNCTION
-
-def add_todo_task():
-
-    task = st.session_state.todo_input.strip()
-
-    if task:
-
-        st.session_state.todo_tasks.append({
-            "id": st.session_state.todo_next_id,
-            "task": task
-        })
-
-        st.session_state.todo_next_id += 1
-        st.session_state.todo_input = ""
-        st.session_state.todo_error = False
-
-    else:
-        st.session_state.todo_error = True
-
-
 # DELETE TASK FUNCTION
 
 def delete_todo_task(task_id):
@@ -1433,7 +1413,7 @@ def delete_todo_task(task_id):
 
 # TASK INPUT
 
-with st.container(border=True):
+with st.form("todo_form", clear_on_submit=True):
 
     st.text_input(
         "What do you need to do?",
@@ -1441,13 +1421,32 @@ with st.container(border=True):
         key="todo_input"
     )
 
-    st.button(
+    submitted = st.form_submit_button(
         "➕ Add Task",
-        on_click=add_todo_task,
-        use_container_width=False
+        use_container_width=True
     )
 
+    if submitted:
+
+        task = st.session_state.todo_input.strip()
+
+        if task:
+
+            st.session_state.todo_tasks.append({
+                "id": st.session_state.todo_next_id,
+                "task": task
+            })
+
+            st.session_state.todo_next_id += 1
+            st.session_state.todo_error = False
+
+        else:
+
+            st.session_state.todo_error = True
+
+
 if st.session_state.todo_error:
+
     st.warning("Please enter a task first!")
 
 
@@ -1456,6 +1455,7 @@ if st.session_state.todo_error:
 st.markdown("---")
 
 st.subheader("📋 My Tasks")
+
 
 if st.session_state.todo_tasks:
 
@@ -1487,6 +1487,7 @@ if st.session_state.todo_tasks:
                 args=(task_id,)
             )
 
+
     # PROGRESS BAR
 
     total_tasks = len(st.session_state.todo_tasks)
@@ -1495,20 +1496,24 @@ if st.session_state.todo_tasks:
 
     st.markdown("---")
 
+    st.subheader("📊 Your Progress")
+
     st.progress(progress)
+
+    percentage = int(progress * 100)
 
     st.write(
         f"Completed {completed_tasks} "
         f"out of {total_tasks} tasks!"
     )
 
-    percentage = int(progress * 100)
-
     st.caption(f"{percentage}% completed")
+
 
 else:
 
     st.info("No tasks yet. Add your first task!")
+
 
 
 
