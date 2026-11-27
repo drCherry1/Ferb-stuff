@@ -1373,6 +1373,7 @@ elif st.session_state.number_game_won is False:
 
 
 
+
 # ==========================================
 # MY TO-DO LIST
 # ==========================================
@@ -1384,7 +1385,9 @@ st.title("✅ My To-Do List")
 st.write("Plan your day and track your progress.")
 
 
+# ==========================================
 # SESSION STATE
+# ==========================================
 
 if "todo_tasks" not in st.session_state:
     st.session_state.todo_tasks = []
@@ -1396,7 +1399,9 @@ if "todo_error" not in st.session_state:
     st.session_state.todo_error = False
 
 
-# DELETE TASK FUNCTION
+# ==========================================
+# DELETE ONE TASK
+# ==========================================
 
 def delete_todo_task(task_id):
 
@@ -1411,7 +1416,26 @@ def delete_todo_task(task_id):
         del st.session_state[checkbox_key]
 
 
+# ==========================================
+# CLEAR ALL TASKS
+# ==========================================
+
+def clear_all_todo_tasks():
+
+    for task in st.session_state.todo_tasks:
+
+        checkbox_key = f"todo_done_{task['id']}"
+
+        if checkbox_key in st.session_state:
+            del st.session_state[checkbox_key]
+
+    st.session_state.todo_tasks = []
+    st.session_state.todo_error = False
+
+
+# ==========================================
 # TASK INPUT
+# ==========================================
 
 with st.form("todo_form", clear_on_submit=True):
 
@@ -1446,16 +1470,31 @@ with st.form("todo_form", clear_on_submit=True):
 
 
 if st.session_state.todo_error:
-
     st.warning("Please enter a task first!")
 
 
+# ==========================================
 # TASK LIST
+# ==========================================
 
 st.markdown("---")
 
 st.subheader("📋 My Tasks")
 
+
+# CLEAR ALL BUTTON
+
+st.button(
+    "🧹 Clear All Tasks",
+    on_click=clear_all_todo_tasks,
+    disabled=len(st.session_state.todo_tasks) == 0,
+    use_container_width=False
+)
+
+
+# ==========================================
+# DISPLAY TASKS
+# ==========================================
 
 if st.session_state.todo_tasks:
 
@@ -1467,6 +1506,8 @@ if st.session_state.todo_tasks:
 
         col1, col2 = st.columns([8, 1])
 
+        # TASK CHECKBOX
+
         with col1:
 
             is_completed = st.checkbox(
@@ -1476,6 +1517,8 @@ if st.session_state.todo_tasks:
 
             if is_completed:
                 completed_tasks += 1
+
+        # DELETE BUTTON
 
         with col2:
 
@@ -1488,7 +1531,9 @@ if st.session_state.todo_tasks:
             )
 
 
+    # ======================================
     # PROGRESS BAR
+    # ======================================
 
     total_tasks = len(st.session_state.todo_tasks)
 
@@ -1513,7 +1558,6 @@ if st.session_state.todo_tasks:
 else:
 
     st.info("No tasks yet. Add your first task!")
-
 
 
 
