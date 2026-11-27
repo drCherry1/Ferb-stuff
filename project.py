@@ -1,6 +1,9 @@
 
 import streamlit as st
 import random 
+import pandas as pd
+from datetime import date
+
 
 # ==========================================
 # PAGE SETTINGS
@@ -1558,6 +1561,364 @@ if st.session_state.todo_tasks:
 else:
 
     st.info("No tasks yet. Add your first task!")
+
+
+
+# ==========================================
+# PAGE SETTINGS
+# ==========================================
+
+st.set_page_config(
+    page_title="Student Money Manager",
+    page_icon="💰",
+    layout="centered"
+)
+
+# ==========================================
+# SESSION STATE
+# ==========================================
+
+if "transactions" not in st.session_state:
+    st.session_state.transactions = []
+
+if "starting_balance" not in st.session_state:
+    st.session_state.starting_balance = 0.0
+
+if "money_next_id" not in st.session_state:
+    st.session_state.money_next_id = 0
+
+if "money_error" not in st.session_state:
+    st.session_state.money_error = ""
+
+
+# ==========================================
+# HELPER FUNCTIONS
+# ==========================================
+
+def add_transaction():
+
+    description = st.session_state.money_description.strip()
+    amount = float(st.session_state.money_amount)
+    transaction_type = st.session_state.money_type
+    transaction_date = st.session_state.money_date
+
+    if not description:
+        st.session_state.money_error = "Please enter a description."
+        return
+
+    if amount <= 0:
+        st.session_state.money_error = "Please enter an amount greater than zero."
+        return
+
+    st.session_state.transactions.append({
+        "id": st.session_state.money_next_id,
+        "Date": transaction_date.isoformat(),
+        "Description": description,
+        "Type": transaction_type,
+        "Amount": amount
+    })
+
+    st.session_state.money_next_id += 1
+    st.session_state.money_error = ""
+
+
+def delete_transaction(transaction_id):
+
+    st.session_state.transactions = [
+        transaction
+        for transaction in st.session_state.transactions
+        if transaction["id"] != transaction_id
+    ]
+
+
+def clear_transactions():
+
+    st.session_state.transactions = []
+    st.session_state.money_error = ""
+
+
+# ==========================================
+# HEADER
+# ==========================================
+
+st.title("💰 Student Money Manager")
+
+st.write(
+    "Keep track of your allowance, income, "
+    "expenses, and savings."
+)
+
+st.markdown("---")
+
+
+# ==========================================
+# ALLOWANCE / STARTING BALANCE
+# ==========================================
+
+st.subheader("🏦 My Allowance")
+
+st.number_input(
+    "Starting balance / allowance (Rp)",
+    min_value=0.0,
+    step=1000.0,
+    key="starting_balance",
+    help="Enter the amount of money you currently have."
+)
+
+
+# ==========================================
+# CALCULATE TOTALS
+# ==========================================
+
+income_total = sum(
+    item["Amount"]
+    for item in st.session_state.transactions
+    if item["Type"] == "Income"
+)
+
+expense_total = sum(
+    item["Amount"]
+    for item in st.session_state.transactions
+    if item["Type"] == "Expense"
+)
+
+current_balance = (
+    st.session_state.starting_balance
+    + income_total
+    - expense_total
+)
+
+
+# ==========================================
+# DASHBOARD SUMMARY
+# ==========================================
+
+st.markdown("---")
+
+st.subheader("📊 Money Overview")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric(
+        "💵 Current Balance",
+        f"Rp {current_balance:,.0f}"
+    )
+
+with col2:
+    st.metric(
+        "🎁 Starting Allowance",
+        f"Rp {st.session_state.starting_balance:,.0f}"
+    )
+
+col3, col4 = st.columns(2)
+
+with col3:
+    st.metric(
+        "📈 Total Income",
+        f"Rp {income_total:,.0f}"
+    )
+
+with col4:
+    st.metric(
+        "📉 Total Expenses",
+        f"Rp {expense_total:,.0f}"
+    )
+
+if current_balance < 0:
+    st.warning(
+        "Your recorded expenses are higher than your available money."
+    )
+
+elif current_balance == 0:
+    st.info("Your current balance is Rp 0.")
+
+
+# ==========================================
+# ADD TRANSACTION
+# ==========================================
+
+st.markdown("---")
+
+st.subheader("➕ Add a Transaction")
+
+with st.form("money_transaction_form", clear_on_submit=True):
+
+    st.text_input(
+        "Description",
+        placeholder="e.g. Lunch, bus fare, pocket money",
+        key="money_description"
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.selectbox(
+            "Transaction type",
+            ["Expense", "Income"],
+            key="money_type"
+        )
+
+    with col2:
+        st.number_input(
+            "Amount (Rp)",
+            min_value=0.0,
+            step=1000.0,
+            key="money_amount"
+        )
+
+    st.date_input(
+        "Date",
+        value=date.today(),
+        key="money_date"
+    )
+
+    submitted = st.form_submit_button(
+        "Add Transaction",
+        use_container_width=True
+    )
+
+    if submitted:
+
+        add_transaction()
+
+        if not st.session_state.money_error:
+            st.success("Transaction added successfully!")
+            st.rerun()
+
+
+if st.session_state.money_error:
+    st.warning(st.session_state.money_error)
+
+
+# ==========================================
+# TRANSACTION HISTORY
+# ==========================================
+
+st.markdown("---")
+
+st.subheader("🧾 Transaction History")
+
+if st.session_state.transactions:
+
+    display_rows = []
+
+    for item in st.session_state.transactions:
+
+        display_rows.append({
+            "Date": item["Date"],
+            "Description": item["Description"],
+            "Type": item["Type"],
+            "Amount (Rp)": item["Amount"]
+        })
+
+    df = pd.DataFrame(display_rows)
+
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # DELETE INDIVIDUAL TRANSACTIONS
+
+    st.write("**Delete an individual transaction**")
+
+    for item in reversed(st.session_state.transactions):
+
+        col1, col2 = st.columns([5, 1])
+
+        with col1:
+
+            sign = "+" if item["Type"] == "Income" else "-"
+
+            st.write(
+                f"{item['Date']} · "
+                f"{item['Description']} · "
+                f"{item['Type']} · "
+                f"{sign}Rp {item['Amount']:,.0f}"
+            )
+
+        with col2:
+
+            st.button(
+                "🗑️",
+                key=f"delete_money_{item['id']}",
+                help="Delete this transaction",
+                on_click=delete_transaction,
+                args=(item["id"],)
+            )
+
+    # DOWNLOAD CSV
+
+    csv_data = df.to_csv(index=False).encode("utf-8")
+
+    st.download_button(
+        "⬇️ Download Transactions as CSV",
+        data=csv_data,
+        file_name="student_money_transactions.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
+
+    # CLEAR ALL TRANSACTIONS
+
+    st.button(
+        "🧹 Clear All Transactions",
+        on_click=clear_transactions,
+        help="Remove all recorded transactions"
+    )
+
+else:
+
+    st.info(
+        "No transactions yet. Add your first income or expense above."
+    )
+
+
+# ==========================================
+# SPENDING BREAKDOWN
+# ==========================================
+
+if expense_total > 0:
+
+    st.markdown("---")
+
+    st.subheader("📉 Spending Summary")
+
+    st.write(
+        f"You have recorded **Rp {expense_total:,.0f}** in expenses."
+    )
+
+    available_before_expenses = (
+        st.session_state.starting_balance + income_total
+    )
+
+    if available_before_expenses > 0:
+
+        spent_ratio = min(
+            expense_total / available_before_expenses,
+            1.0
+        )
+
+        st.progress(spent_ratio)
+
+        st.caption(
+            f"{spent_ratio * 100:.1f}% of your starting allowance "
+            "and recorded income has been spent."
+        )
+
+
+# ==========================================
+# FOOTER
+# ==========================================
+
+st.markdown("---")
+
+st.caption(
+    "Tip: Record transactions regularly to keep your balance accurate."
+)
+
 
 
 
