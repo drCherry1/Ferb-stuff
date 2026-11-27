@@ -1371,3 +1371,80 @@ elif st.session_state.number_game_won is False:
     )
 
 
+# ==========================================
+# MY TO-DO LIST
+# ==========================================
+
+st.markdown("---")
+
+st.title("✅ My To-Do List")
+
+st.write("Stay organized and keep track of your tasks!")
+
+# SESSION STATE
+
+if "todo_tasks" not in st.session_state:
+    st.session_state.todo_tasks = []
+
+if "todo_next_id" not in st.session_state:
+    st.session_state.todo_next_id = 0
+
+
+# ADD TASK FUNCTION
+
+def add_todo_task():
+
+    task = st.session_state.todo_input.strip()
+
+    if task:
+
+        st.session_state.todo_tasks.append({
+            "id": st.session_state.todo_next_id,
+            "task": task
+        })
+
+        st.session_state.todo_next_id += 1
+
+        st.session_state.todo_input = ""
+
+    else:
+        st.session_state.todo_error = True
+
+
+# TASK INPUT
+
+st.text_input(
+    "Enter your task:",
+    placeholder="What do you need to do?",
+    key="todo_input"
+)
+
+st.button(
+    "➕ Add Task",
+    on_click=add_todo_task,
+    use_container_width=True
+)
+
+
+# DISPLAY TASKS
+
+st.markdown("---")
+
+st.subheader("📋 My Tasks")
+
+if st.session_state.todo_tasks:
+
+    for task in st.session_state.todo_tasks:
+
+        st.checkbox(
+            task["task"],
+            key=f"todo_done_{task['id']}"
+        )
+
+else:
+
+    st.info("No tasks yet. Add your first task!")
+
+
+
+
